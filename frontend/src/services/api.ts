@@ -1,6 +1,7 @@
 import { AudioRecord } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://114.132.228.27:8000";
+// 使用相对路径，利用 Next.js 的 rewrites 转发到后端
+const API_BASE_URL = "";
 
 // Helper to map backend response to frontend type
 const mapRecord = (record: any): AudioRecord => {
@@ -13,7 +14,8 @@ const mapRecord = (record: any): AudioRecord => {
     emotion: record.emotion_tag || "Unknown",
     tags: record.scene_tags || [],
     story: record.generated_story || "No story generated yet.",
-    audioUrl: `${API_BASE_URL}/static/uploads/${filename}`,
+    // 直接使用 /static 路径，利用 rewrites
+    audioUrl: `/static/uploads/${filename}`,
     createdAt: record.created_at,
     likeCount: record.like_count || 0,
     questionCount: record.question_count || 0,
@@ -43,7 +45,8 @@ export const api = {
   // Records
   getMapRecords: async (): Promise<AudioRecord[]> => {
     // Use latest records to ensure we see the most recent uploads
-    const response = await fetch(`${API_BASE_URL}/api/v1/records/latest?limit=100`);
+    // 修正路径为 /api/audios/map (后端路由)
+    const response = await fetch(`${API_BASE_URL}/api/audios/map?limit=100`);
     if (!response.ok) throw new Error("Failed to fetch records");
     const data = await response.json();
     return data.map(mapRecord);
@@ -58,7 +61,8 @@ export const api = {
       formData.append("user_id", userId);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/records/upload`, {
+    // 修正路径为 /api/audios/upload (后端路由)
+    const response = await fetch(`${API_BASE_URL}/api/audios/upload`, {
       method: "POST",
       body: formData,
     });
@@ -69,7 +73,7 @@ export const api = {
   },
 
   likeRecord: async (recordId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}/like`, {
+    const response = await fetch(`${API_BASE_URL}/api/audios/${recordId}/like`, {
       method: "POST",
     });
     if (!response.ok) throw new Error("Failed to like record");
@@ -78,7 +82,7 @@ export const api = {
   },
 
   unlikeRecord: async (recordId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}/like`, {
+    const response = await fetch(`${API_BASE_URL}/api/audios/${recordId}/like`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to unlike record");
@@ -87,7 +91,7 @@ export const api = {
   },
 
   questionRecord: async (recordId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}/question`, {
+    const response = await fetch(`${API_BASE_URL}/api/audios/${recordId}/question`, {
       method: "POST",
     });
     if (!response.ok) throw new Error("Failed to question record");
@@ -96,7 +100,7 @@ export const api = {
   },
 
   unquestionRecord: async (recordId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}/question`, {
+    const response = await fetch(`${API_BASE_URL}/api/audios/${recordId}/question`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to unquestion record");

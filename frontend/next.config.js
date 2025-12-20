@@ -18,6 +18,16 @@ const nextConfig = {
         source: '/mapbox-tiles/:path*',
         destination: 'https://tiles.mapbox.com/:path*',
       },
+      // 代理后端 API
+      {
+        source: '/api/:path*',
+        destination: 'http://backend:8000/api/:path*',
+      },
+      // 代理静态文件 (上传的音频)
+      {
+        source: '/static/:path*',
+        destination: 'http://backend:8000/static/:path*',
+      },
     ]
   },
 }

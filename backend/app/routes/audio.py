@@ -72,3 +72,55 @@ def read_audio_record(record_id: str, db: Session = Depends(get_db)):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Record not found")
     return record
+
+@router.post("/{record_id}/like", response_model=schemas.AudioRecord)
+def like_audio_record(record_id: str, db: Session = Depends(get_db)):
+    """
+    点赞音频记录
+    """
+    from app.crud import audio as audio_crud
+    from fastapi import HTTPException
+    
+    record = audio_crud.increment_like(db, record_id=record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return record
+
+@router.delete("/{record_id}/like", response_model=schemas.AudioRecord)
+def unlike_audio_record(record_id: str, db: Session = Depends(get_db)):
+    """
+    取消点赞音频记录
+    """
+    from app.crud import audio as audio_crud
+    from fastapi import HTTPException
+    
+    record = audio_crud.decrement_like(db, record_id=record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return record
+
+@router.post("/{record_id}/question", response_model=schemas.AudioRecord)
+def question_audio_record(record_id: str, db: Session = Depends(get_db)):
+    """
+    对音频记录提问（增加提问计数）
+    """
+    from app.crud import audio as audio_crud
+    from fastapi import HTTPException
+    
+    record = audio_crud.increment_question(db, record_id=record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return record
+
+@router.delete("/{record_id}/question", response_model=schemas.AudioRecord)
+def unquestion_audio_record(record_id: str, db: Session = Depends(get_db)):
+    """
+    取消提问（减少提问计数）
+    """
+    from app.crud import audio as audio_crud
+    from fastapi import HTTPException
+    
+    record = audio_crud.decrement_question(db, record_id=record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return record
