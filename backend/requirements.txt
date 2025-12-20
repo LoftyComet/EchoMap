@@ -4,3 +4,9 @@ python-multipart
 sqlalchemy
 asyncpg
 requests
+psycopg2-binary
+geoalchemy2
+shapely
+pgvector
+alembic
+pydantic-settings

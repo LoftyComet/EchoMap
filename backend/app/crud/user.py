@@ -1,0 +1,16 @@
+from sqlalchemy.orm import Session
+from backend.app.models.user import User
+from backend.app.schemas.user import UserCreate
+
+def get_user(db: Session, user_id: str):
+    return db.query(User).filter(User.id == user_id).first()
+
+def get_user_by_email(db: Session, email: str):
+    return db.query(User).filter(User.email == email).first()
+
+def create_user(db: Session, user: UserCreate):
+    db_user = User(username=user.username, email=user.email)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
