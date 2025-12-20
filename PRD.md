@@ -86,7 +86,6 @@ class AIService:
         transcript = await self.asr_model.transcribe(file_bytes)
         
         # 2. 语义分析与故事生成 (LLM)
-        # 调用 Qwen API
         prompt = f"分析这段录音内容：{transcript}。1. 提取情感。2. 提取场景标签。3. 生成一段简短的各种氛围故事。"
         analysis_result = await self.llm_model.generate(prompt)
         
