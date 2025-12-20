@@ -8,6 +8,13 @@ RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debia
 
 # 安装依赖
 COPY requirements.txt .
+# 在安装 pip 依赖之前，先安装系统级编译依赖
+RUN apt-get update && apt-get install -y \
+    portaudio19-dev \
+    python3-dev \
+    build-essential \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 关键：直接拷贝到 /app 目录下

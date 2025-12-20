@@ -43,7 +43,7 @@ mdurl==0.1.2
 mutagen==1.47.0
 mypy_extensions==1.1.0
 narwhals==1.42.1
-numpy==2.3.0
+numpy==2.2.6
 openai==1.88.0
 ordered-set==4.1.0
 packaging==25.0
@@ -92,3 +92,4 @@ vosk==0.3.44
 websockets==15.0.1
 wheel==0.45.1
 xyzservices==2025.11.0
+pgvector
