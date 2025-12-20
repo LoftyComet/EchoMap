@@ -15,7 +15,7 @@ npm install
 `$env:Path += ";C:\Program Files\Docker\Docker\resources\bin"`
 
 #### 运行 pgvector 官方镜像
-docker run -d --name echomap-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=echomap -p 5432:5432 pgvector/pgvector:pg16
+`docker run -d --name echomap-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=echomap -p 5432:5432 pgvector/pgvector:pg16`
 
 #### 进入容器安装 PostGIS (这一步需要容器内有网络)
 `docker exec -u 0 -it echomap-db bash -c "apt-get update && apt-get install -y postgis postgresql-16-postgis-3"`

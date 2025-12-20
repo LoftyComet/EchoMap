@@ -7,6 +7,7 @@
 | 版本 | 日期 | 作者 | 状态 | 备注 |
 | --- | --- | --- | --- | --- |
 | v1.0 | 2025-12-20 | Gem (AI) | 待开发 | 基于初始概念生成的 MVP 规格 |
+| v1.1 | 2025-12-20 | Copilot | 开发中 | 后端基础架构已搭建 (DB, Models) |
 
 ## 1. 项目概述 (Overview)
 
@@ -232,15 +233,15 @@ class AIService:
 
 ### 第一阶段：基础设施 (Day 1-2)
 
-1. **Backend**: 设置 PostgreSQL 数据库，安装 PostGIS 和 pgvector 扩展。
-2. **Backend**: 定义 SQLAlchemy Models (`User`, `AudioRecord`)。
-3. **Frontend**: 替换 `MapComponent` 中的 Mock 逻辑，接入真实的 Map SDK (Leaflet/Mapbox)。
+1. **Backend**: 设置 PostgreSQL 数据库，安装 PostGIS 和 pgvector 扩展。 [已完成]
+2. **Backend**: 定义 SQLAlchemy Models (`User`, `AudioRecord`)。 [已完成]
+3. **Frontend**: 替换 `MapComponent` 中的 Mock 逻辑，接入真实的 Map SDK (Leaflet/Mapbox)。 [待办]
 
 ### 第二阶段：录制与存储 (Day 3-4)
 
-1. **Frontend**: 完善 `RecordButton`，实现真实的录音生成 Blob。
-2. **Backend**: 实现文件上传接口，保存音频文件至本地 `static` 目录或 S3。
-3. **Backend**: 实现简单的写库逻辑（暂无 AI）。
+1. **Frontend**: 完善 `RecordButton`，实现真实的录音生成 Blob。 [待办]
+2. **Backend**: 实现文件上传接口，保存音频文件至本地 `static` 目录或 S3。 [待办]
+3. **Backend**: 实现简单的写库逻辑（暂无 AI）。 [待办]
 
 ### 第三阶段：AI 大脑接入 (Day 5-6)
 
@@ -256,20 +257,10 @@ class AIService:
 
 ---
 
-## 7. 立即执行的修改建议 (Immediate Actions)
+## 7. 下一步行动计划 (Next Steps)
 
-基于你上传的文件，请按照以下步骤开始：
+基于当前进度（后端基础已就绪），接下来的重点是前端功能的实装和前后端联调。
 
-1. **Backend**: 在 `backend/requirements.txt` 中添加依赖：
-```text
-python-multipart
-psycopg2-binary
-geoalchemy2
-pgvector
-openai  # 或者 dashscope (阿里云 Qwen)
-
-```
-
-
-2. **Backend**: 修改 `main.py`，配置数据库连接。
-3. **Frontend**: 在 `frontend/src/app/components/RecordButton.tsx` 中移除 `setTimeout` 模拟，写入真实的 `MediaRecorder` 逻辑。
+1. **Frontend**: 在 `frontend/src/app/components/RecordButton.tsx` 中移除 `setTimeout` 模拟，写入真实的 `MediaRecorder` 逻辑，并调用后端上传接口。
+2. **Frontend**: 改造 `MapComponent`，引入 `react-leaflet` 或 `mapbox-gl`，准备展示真实数据。
+3. **Backend**: 实现 `POST /api/v1/records/upload` 接口，处理文件接收和数据库写入。
