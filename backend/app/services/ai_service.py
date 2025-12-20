@@ -103,8 +103,8 @@ class AIService:
             # Fallback on error
             return {
                 "transcript": transcript,
-                "emotion": emotion,
-                "emotion_tags": [],
+                "emotion_tag": emotion, # Fixed key to match AudioService expectation
+                "scene_tags": [],
                 "story": "服务暂时不可用"
             }
 
@@ -140,11 +140,21 @@ class AIService:
             # Assuming DB uses 'scene_tags', let's ensure compatibility.
             # If DB model expects 'scene_tags', we should map it here or in the caller.
             # Based on previous context, DB uses 'scene_tags'.
+            print(f"Final Analysis Result: {final_result}")
+            
+            # Ensure we don't lose the original data if LLM returns empty strings
+            final_transcript = final_result.get("transcript")
+            if not final_transcript:
+                final_transcript = transcript
+                
+            final_emotion = final_result.get("emotion")
+            if not final_emotion:
+                final_emotion = emotion
             
             return {
-                "transcript": final_result.get("transcript", transcript),
-                "emotion": final_result.get("emotion", emotion),
-                "emotion_tag": final_result.get("emotion_tags", []),
+                "transcript": final_transcript,
+                "emotion_tag": final_emotion,
+                "scene_tags": final_result.get("emotion_tags", []),
                 "story": final_result.get("story", "")
             }
 
@@ -152,8 +162,8 @@ class AIService:
             logger.error(f"Error processing audio: {e}")
             return {
                 "transcript": "Error processing audio",
-                "emotion": "Error",
-                "emotion_tag": [],
+                "emotion_tag": "Error",
+                "scene_tags": [],
                 "story": ""
             }
 
@@ -190,7 +200,7 @@ async def main():
     """
     Main function to test the AI service.
     """
-    audio_path = "backend/AI_infer/test.mp3"
+    audio_path = r"C:\Users\Neo-R\Desktop\Neo3-1\backend\AI_infer\test.mp3"
     
     try:
         with open(audio_path, "rb") as f:

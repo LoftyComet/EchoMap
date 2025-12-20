@@ -4,12 +4,16 @@ from backend.app.schemas.audio import AudioRecordCreate
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
 
-def create_audio_record(db: Session, record: AudioRecordCreate, file_path: str):
+from typing import Optional
+from uuid import UUID
+
+def create_audio_record(db: Session, record: AudioRecordCreate, file_path: str, user_id: Optional[UUID] = None):
     # 创建 PostGIS 点
     # 使用 WKT (Well-Known Text) 格式插入
     point_wkt = f'POINT({record.longitude} {record.latitude})'
     
     db_record = AudioRecord(
+        user_id=user_id,
         file_path=file_path,
         latitude=record.latitude,
         longitude=record.longitude,
@@ -27,6 +31,9 @@ def create_audio_record(db: Session, record: AudioRecordCreate, file_path: str):
 
 def get_records(db: Session, skip: int = 0, limit: int = 100):
     return db.query(AudioRecord).offset(skip).limit(limit).all()
+
+def get_records_by_user(db: Session, user_id: str, skip: int = 0, limit: int = 100):
+    return db.query(AudioRecord).filter(AudioRecord.user_id == user_id).offset(skip).limit(limit).all()
 
 def get_record(db: Session, record_id: str):
     return db.query(AudioRecord).filter(AudioRecord.id == record_id).first()

@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -49,6 +50,12 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.user.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Check for username duplication as well
+    db_user_by_name = db.query(models.user.User).filter(models.user.User.username == user.username).first()
+    if db_user_by_name:
+        raise HTTPException(status_code=400, detail="Username already taken")
+        
     return crud.user.create_user(db=db, user=user)
 
 @app.get("/users/{user_id}", response_model=schemas.User)
@@ -58,6 +65,11 @@ def read_user(user_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
+@app.get("/users/{user_id}/records", response_model=list[schemas.AudioRecord])
+def read_user_records(user_id: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    records = crud.audio.get_records_by_user(db, user_id=user_id, skip=skip, limit=limit)
+    return records
+
 # --- Audio Record Endpoints ---
 
 @app.post("/api/v1/records/upload", response_model=schemas.AudioRecord)
@@ -65,6 +77,7 @@ async def upload_audio(
     background_tasks: BackgroundTasks,
     latitude: float = Form(...),
     longitude: float = Form(...),
+    user_id: Optional[str] = Form(None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
@@ -73,6 +86,7 @@ async def upload_audio(
         file=file,
         latitude=latitude,
         longitude=longitude,
+        user_id=user_id,
         background_tasks=background_tasks
     )
 

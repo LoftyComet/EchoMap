@@ -27,13 +27,18 @@ class AudioService:
             filename = os.path.basename(file_path)
             ai_result = await ai_service.process_audio(file_bytes, filename)
             
+            print(f"AI Service Result for {record_id}: {ai_result}") # Debug log
+
             # Update Database
+            # Mock embedding since AI service doesn't return it yet
+            mock_embedding = [0.1] * 768
+            
             update_data = {
                 "transcript": ai_result.get("transcript"),
+                "emotion_tag": ai_result.get("emotion_tag"),
                 "generated_story": ai_result.get("story"),
-                "emotion_tag": ai_result.get("emotion"),
                 "scene_tags": ai_result.get("scene_tags"),
-                "embedding": ai_result.get("embedding")
+                "embedding": mock_embedding
             }
             
             crud.audio.update_audio_record(db, record_id, update_data)
@@ -50,7 +55,8 @@ class AudioService:
         file: UploadFile, 
         latitude: float, 
         longitude: float, 
-        background_tasks: BackgroundTasks
+        background_tasks: BackgroundTasks,
+        user_id: str = None
     ) -> schemas.AudioRecord:
         """
         Handles file upload, DB record creation, and triggers background processing.
@@ -77,7 +83,7 @@ class AudioService:
             generated_story=""
         )
         
-        db_record = crud.audio.create_audio_record(db, record_create, file_path)
+        db_record = crud.audio.create_audio_record(db, record_create, file_path, user_id=user_id)
         
         # 3. Trigger Background Task
         # Note: We pass the method of this instance
