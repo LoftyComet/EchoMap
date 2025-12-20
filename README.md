@@ -32,3 +32,10 @@ docker exec -it echomap-db psql -U postgres -d echomap -c "CREATE EXTENSION IF N
 ### 启动前端
 `cd frontend
 npm run dev`
+
+## AutoDL 部署
+### 在AutoDL服务器上，启动终端
+pip install -r autodl_requirements.txt
+python download.py
+### 根据实际情况修改server.py中的模型路径配置
+python server.py
