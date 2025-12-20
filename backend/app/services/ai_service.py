@@ -143,8 +143,8 @@ class AIService:
             
             return {
                 "transcript": final_result.get("transcript", transcript),
-                "emotion_tag": final_result.get("emotion", emotion),
-                "scene_tags": final_result.get("emotion_tags", []),
+                "emotion": final_result.get("emotion", emotion),
+                "emotion_tag": final_result.get("emotion_tags", []),
                 "story": final_result.get("story", "")
             }
 
@@ -152,8 +152,8 @@ class AIService:
             logger.error(f"Error processing audio: {e}")
             return {
                 "transcript": "Error processing audio",
-                "emotion_tag": "Error",
-                "scene_tags": [],
+                "emotion": "Error",
+                "emotion_tag": [],
                 "story": ""
             }
 
