@@ -118,7 +118,7 @@ class AIService:
         prompt_content = "请简要描述这段录音的内容"
 
         # Prompt 2: Get Emotion
-        prompt_emotion = "请概括这段录音的情感氛围"
+        prompt_emotion = "请尽可能详细地描述这段录音的情感氛围"
 
         try:
             # Step 1: Execute initial analysis requests in parallel
