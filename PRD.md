@@ -8,6 +8,7 @@
 | --- | --- | --- | --- | --- |
 | v1.0 | 2025-12-20 | Gem (AI) | 待开发 | 基于初始概念生成的 MVP 规格 |
 | v1.1 | 2025-12-20 | Copilot | 开发中 | 后端基础架构已搭建 (DB, Models) |
+| v1.2 | 2025-12-20 | Copilot | 开发中 | 后端 AI 服务集成 (External API + DeepSeek), 前端基础地图组件 (OSM iframe) |
 
 ## 1. 项目概述 (Overview)
 
@@ -26,9 +27,9 @@ EchoMap 是一个基于地理位置的声音社交平台。它利用 AI 技术�
 * **Backend**: FastAPI (Python), SQLAlchemy (ORM).
 * **Database**: PostgreSQL (PostGIS 插件处理地理信息, pgvector 插件处理向量数据).
 * **AI/ML**:
-* ASR (语音转文字): Whisper 或 SenseVoice (API/本地部署).
-* NLP (语义分析): Qwen-Audio 或 Qwen-Turbo (提取 Tag、情感、故事).
-* Embedding (声纹向量化): CLAP (Contrastive Language-Audio Pretraining) 或类似音频编码器.
+* **Audio Analysis**: External API (Custom Model on GPUHub) for initial processing.
+* **NLP (Story/Tags)**: DeepSeek LLM (via OpenAI-compatible API) for generating stories, emotion tags, and scene tags.
+* **Embedding**: Currently mocked (placeholder), planned to use CLAP or similar audio encoder.
 
 
 * **Storage**: 本地文件系统 / S3 (存储音频原文件).
@@ -91,27 +92,27 @@ Styling: Tailwind CSS (快速构建布局)
 我们需要一个服务类来封装 AI 处理逻辑。
 
 ```python
-# 伪代码逻辑
+# 实际实现逻辑 (backend/services/ai_service.py)
 class AIService:
-    async def process_audio(self, file_bytes):
-        # 1. 语音转文字 (ASR)
-        # 调用 Whisper/SenseVoice API
-        transcript = await self.asr_model.transcribe(file_bytes)
+    async def process_audio(self, file_bytes, filename):
+        # 1. 调用外部音频分析 API
+        # URL: https://u570751-8ln3hmx6jjjqkskb3rez.westc.gpuhub.com:8443/analyze
+        analysis_raw = await self._call_api(file_bytes, filename)
         
-        # 2. 语义分析与故事生成 (LLM)
-        prompt = f"分析这段录音内容：{transcript}。1. 提取情感。2. 提取场景标签。3. 生成一段简短的各种氛围故事。"
-        analysis_result = await self.llm_model.generate(prompt)
+        # 2. 调用 LLM (DeepSeek) 生成故事和标签
+        # 基于分析结果生成结构化数据
+        llm_result = await self._call_llm(analysis_raw.transcript, analysis_raw.emotion)
         
         # 3. 向量化 (Embedding)
-        # 将音频特征或文本描述转化为向量，用于计算相似度
-        vector = await self.embedding_model.encode(file_bytes/transcript)
+        # 目前使用 Mock 数据，后续集成 CLAP
+        vector = [0.1] * 768
         
         return {
-            "transcript": transcript,
-            "story": analysis_result.story,
-            "emotion": analysis_result.emotion,
-            "tags": analysis_result.tags,
-            "vector": vector
+            "transcript": llm_result.transcript,
+            "story": llm_result.story,
+            "emotion_tag": llm_result.emotion,
+            "scene_tags": llm_result.emotion_tags,
+            "embedding": vector
         }
 
 ```
@@ -174,9 +175,9 @@ class AIService:
 
 ### 4.1 组件：MapComponent (`src/app/components/MapComponent.tsx`)
 
-* **现状**: 只有 Mock 的 div 点。
+* **现状**: 使用 OpenStreetMap iframe 进行基础展示，叠加 HTML Markers。
 * **开发任务**:
-1. 引入 **Mapbox GL JS** 或 **React Leaflet** (推荐 Leaflet + OpenStreetMap 降低 MVP 成本)。
+1. 升级为 **Mapbox GL JS** 以支持更丰富的视觉效果和交互 (WebGL)。
 2. **State**:
 * `viewState`: { latitude, longitude, zoom }
 * `markers`: Array<AudioRecord>
@@ -189,20 +190,13 @@ class AIService:
 
 ### 4.2 组件：RecordButton (`src/app/components/RecordButton.tsx`)
 
-* **现状**: UI 已有，只有 `setTimeout` 模拟。
+* **现状**: 已实现录音功能 (MediaRecorder) 和声波可视化 (AudioContext)。上传逻辑目前为 Mock。
 * **开发任务**:
-1. 使用 Web Audio API (`MediaRecorder`) 获取麦克风权限。
-2. **Recording Logic**:
-* Start: `navigator.geolocation.getCurrentPosition` 获取坐标 -> `mediaRecorder.start()`.
-* Stop: `mediaRecorder.stop()` -> 获取 `Blob` 数据。
-
-
-3. **Upload Logic**:
-* 将 Blob 封装为 `FormData`。
-* 调用 API `POST /records/upload`。
-
-
-4. **Feedback**: 上传期间显示 Loading 动画，成功后在地图当前位置添加一个临时 Marker。
+1. **Upload Logic**:
+* 将 `Blob` 转换为 `File` 对象。
+* 获取当前地理位置 (Geolocation API)。
+* 调用 `POST /api/v1/records/upload` 上传音频和坐标。
+2. **Feedback**: 上传期间显示 Loading 动画，成功后在地图当前位置添加一个临时 Marker。
 
 
 
@@ -247,32 +241,32 @@ class AIService:
 
 1. **Backend**: 设置 PostgreSQL 数据库，安装 PostGIS 和 pgvector 扩展。 [已完成]
 2. **Backend**: 定义 SQLAlchemy Models (`User`, `AudioRecord`)。 [已完成]
-3. **Frontend**: 替换 `MapComponent` 中的 Mock 逻辑，接入真实的 Map SDK (Leaflet/Mapbox)。 [待办]
+3. **Frontend**: 替换 `MapComponent` 中的 Mock 逻辑，接入真实的 Map SDK (Leaflet/Mapbox)。 [进行中 - 目前使用 OSM iframe]
 
 ### 第二阶段：录制与存储 (Day 3-4)
 
-1. **Frontend**: 完善 `RecordButton`，实现真实的录音生成 Blob。 [待办]
-2. **Backend**: 实现文件上传接口，保存音频文件至本地 `static` 目录或 S3。 [待办]
-3. **Backend**: 实现简单的写库逻辑（暂无 AI）。 [待办]
+1. **Frontend**: 完善 `RecordButton`，实现真实的录音生成 Blob。 [已完成]
+2. **Backend**: 实现文件上传接口，保存音频文件至本地 `static` 目录。 [已完成]
+3. **Backend**: 实现简单的写库逻辑。 [已完成]
 
 ### 第三阶段：AI 大脑接入 (Day 5-6)
 
-1. **Backend**: 申请 Qwen/OpenAI/Whisper API Key。
-2. **Backend**: 编写 `AIService`，实现 `process_audio` 异步任务。
-3. **Backend**: 测试音频上传后，数据库是否自动生成了 story 和 transcript。
+1. **Backend**: 集成外部音频分析 API 和 DeepSeek LLM。 [已完成]
+2. **Backend**: 编写 `AIService`，实现 `process_audio` 异步任务。 [已完成]
+3. **Backend**: 测试音频上传后，数据库自动生成 story 和 transcript。 [已完成]
 
 ### 第四阶段：地图交互与共鸣 (Day 7+)
 
-1. **Backend**: 实现 `Geo-Query` 接口。
-2. **Backend**: 实现 `Vector Search` 接口（若无音频向量模型，初期可用 `transcript` 的文本向量代替）。
-3. **Frontend**: 对接地图 Marker 展示，完成“点击 Marker -> 播放 -> 推荐相似”的闭环。
+1. **Backend**: 实现 `Geo-Query` 接口。 [已完成]
+2. **Backend**: 实现 `Vector Search` 接口（目前 Mock，需接入真实 Embedding）。 [待办]
+3. **Frontend**: 对接地图 Marker 展示，完成“点击 Marker -> 播放 -> 推荐相似”的闭环。 [待办]
 
 ---
 
 ## 7. 下一步行动计划 (Next Steps)
 
-基于当前进度（后端基础已就绪），接下来的重点是前端功能的实装和前后端联调。
+基于当前进度（后端核心功能已就绪，前端基础组件已搭建），接下来的重点是前后端联调和体验优化。
 
-1. **Frontend**: 在 `frontend/src/app/components/RecordButton.tsx` 中移除 `setTimeout` 模拟，写入真实的 `MediaRecorder` 逻辑，并调用后端上传接口。
-2. **Frontend**: 改造 `MapComponent`，引入 `react-leaflet` 或 `mapbox-gl`，准备展示真实数据。
-3. **Backend**: 实现 `POST /api/v1/records/upload` 接口，处理文件接收和数据库写入。
+1. **Frontend**: 在 `frontend/src/app/components/RecordButton.tsx` 中移除 `setTimeout` 模拟，调用后端 `POST /api/v1/records/upload` 接口。
+2. **Frontend**: 升级 `MapComponent` 为 Mapbox GL JS，实现更酷炫的视觉效果。
+3. **Backend**: 完善 Vector Search，替换 Mock 的 Embedding 数据。

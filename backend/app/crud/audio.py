@@ -35,6 +35,9 @@ def get_records(db: Session, skip: int = 0, limit: int = 100):
 def get_records_by_user(db: Session, user_id: str, skip: int = 0, limit: int = 100):
     return db.query(AudioRecord).filter(AudioRecord.user_id == user_id).offset(skip).limit(limit).all()
 
+def get_latest_records(db: Session, limit: int = 10):
+    return db.query(AudioRecord).order_by(AudioRecord.created_at.desc()).limit(limit).all()
+
 def get_record(db: Session, record_id: str):
     return db.query(AudioRecord).filter(AudioRecord.id == record_id).first()
 

@@ -99,6 +99,14 @@ def get_map_records(
     records = crud.audio.get_records(db, skip=skip, limit=limit)
     return records
 
+@app.get("/api/v1/records/latest", response_model=list[schemas.AudioRecord])
+def get_latest_records(
+    limit: int = 10, 
+    db: Session = Depends(get_db)
+):
+    records = crud.audio.get_latest_records(db, limit=limit)
+    return records
+
 @app.get("/api/v1/records/{record_id}", response_model=schemas.AudioRecord)
 def read_audio_record(record_id: str, db: Session = Depends(get_db)):
     record = crud.audio.get_record(db, record_id=record_id)
