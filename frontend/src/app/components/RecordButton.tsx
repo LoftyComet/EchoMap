@@ -1,4 +1,5 @@
-// src/app/components/RecordButton.tsx
+"use client";
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Square, Loader2 } from 'lucide-react';
@@ -106,7 +107,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
   const glowSize = Math.max(1, 1 + volume / 50); 
 
   return (
-    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50">
+    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[1000]">
       <AnimatePresence mode='wait'>
         {isUploading ? (
           <motion.div 
