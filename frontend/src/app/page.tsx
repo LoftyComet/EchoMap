@@ -1,11 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import MapComponent from "@/app/components/MapComponent";
 import { RecordButton } from "@/app/components/RecordButton";
 import { AudioDetailOverlay } from "@/app/components/AudioDetailOverlay";
 import { AudioRecord } from "@/types";
+<<<<<<< Updated upstream
 import { api } from "@/services/api";
+=======
+import dynamic from 'next/dynamic';
+
+const MapComponent = dynamic(() => import('@/app/components/DynamicMap'), { 
+  ssr: false,
+  loading: () => <div className="w-full h-screen bg-gray-900 flex items-center justify-center text-white">Loading Map...</div>
+});
+>>>>>>> Stashed changes
 
 export default function Home() {
   // States
