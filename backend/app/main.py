@@ -8,6 +8,19 @@ from backend.app import models, schemas, crud
 from backend.app.core.database import SessionLocal, engine
 from backend.app.services import audio_service
 
+# 创建必要的数据库扩展
+#Deli added 
+from sqlalchemy import text
+try:
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""))
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"vector\""))
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"postgis\""))
+        conn.commit()
+        print("Database extensions created successfully")
+except Exception as e:
+    print(f"Error creating extensions: {e}")
+
 # 在应用启动时创建表 (仅用于开发环境，生产环境推荐使用 Alembic)
 models.user.Base.metadata.create_all(bind=engine)
 
