@@ -1,26 +1,31 @@
 // src/app/components/AudioDetailOverlay.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Play, Pause, Heart, Share2 } from 'lucide-react';
+import { X, Play, Pause, Heart, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AudioRecord } from '@/types';
 
 interface DetailProps {
   record: AudioRecord;
   onClose: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
 }
 
-export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose }) => {
+export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose, onNext, onPrev }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackTime, setPlaybackTime] = useState(0);
   const [duration, setDuration] = useState(30); // Mock duration for demo
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    // Reset state when record changes
+    setIsPlaying(false);
+    setPlaybackTime(0);
+    
     // Create audio element for demo
-    if (record.audioUrl && !audioRef.current) {
-      audioRef.current = new Audio();
-      // For demo, we'll simulate playback with a timer
-      // In real app, you would: audioRef.current.src = record.audioUrl;
+    if (record.audioUrl) {
+      audioRef.current = new Audio(record.audioUrl);
+      // In a real app, you'd handle loading, duration, etc.
     }
 
     return () => {
@@ -29,7 +34,7 @@ export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose }) =
         audioRef.current = null;
       }
     };
-  }, [record.audioUrl]);
+  }, [record]); // Depend on record to reset
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -54,15 +59,17 @@ export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose }) =
   const handlePlayPause = () => {
     if (isPlaying) {
       setIsPlaying(false);
-      // audioRef.current?.pause();
+      audioRef.current?.pause();
     } else {
       setIsPlaying(true);
       // For demo: simulate short playback
       setTimeout(() => {
-        setIsPlaying(false);
-        setPlaybackTime(0);
-      }, 5000);
-      // audioRef.current?.play();
+        if (isPlaying) { // Check if still playing
+             setIsPlaying(false);
+             setPlaybackTime(0);
+        }
+      }, 30000); // 30s timeout
+      audioRef.current?.play().catch(e => console.log("Audio play failed (likely no user interaction yet)", e));
     }
   };
 
@@ -83,7 +90,7 @@ export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose }) =
       className="absolute top-20 right-5 w-80 md:w-96 z-40"
     >
       {/* iOS Style Blur Card */}
-      <div className="bg-gray-900/70 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl text-white overflow-hidden relative">
+      <div className="glass-panel rounded-3xl p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] text-white overflow-hidden relative border border-white/10">
         
         {/* Close Button */}
         <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
@@ -109,16 +116,35 @@ export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose }) =
         {/* Audio Player */}
         <div className="bg-white/5 rounded-xl mb-6 p-4 border border-white/5">
           {/* Play Controls */}
-          <div className="flex items-center justify-center mb-4">
+          <div className="flex items-center justify-center space-x-6 mb-4">
+            {/* Prev Button */}
+            <button 
+              onClick={onPrev}
+              className="p-2 text-gray-400 hover:text-white transition hover:scale-110"
+              disabled={!onPrev}
+            >
+              <ChevronLeft size={24} />
+            </button>
+
+            {/* Play/Pause */}
             <button
               onClick={handlePlayPause}
-              className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+              className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform active:scale-95"
             >
               {isPlaying ? (
-                <Pause size={18} className="text-black" />
+                <Pause size={20} className="text-black" />
               ) : (
-                <Play size={18} className="text-black ml-1" />
+                <Play size={20} className="text-black ml-1" />
               )}
+            </button>
+
+            {/* Next Button */}
+            <button 
+              onClick={onNext}
+              className="p-2 text-gray-400 hover:text-white transition hover:scale-110"
+              disabled={!onNext}
+            >
+              <ChevronRight size={24} />
             </button>
           </div>
 

@@ -36,11 +36,70 @@ export default function Home() {
 
   // Fetch records
   const fetchRecords = async () => {
+    // Inject Demo Cases (Constellation around Beijing/User)
+    const baseLat = 39.9042;
+    const baseLng = 116.4074;
+    
+    const demoRecords: AudioRecord[] = [
+      {
+        id: 'demo-1',
+        latitude: baseLat,
+        longitude: baseLng,
+        emotion: 'Nostalgia',
+        tags: ['OldBeijing', 'Winter'],
+        story: '故宫角楼的雪夜，风声与鸽哨交织。',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'demo-2',
+        latitude: baseLat + 0.01,
+        longitude: baseLng + 0.01,
+        emotion: 'Joy',
+        tags: ['Sanlitun', 'Nightlife'],
+        story: '三里屯的霓虹灯下，年轻人的欢笑声。',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'demo-3',
+        latitude: baseLat - 0.008,
+        longitude: baseLng + 0.015,
+        emotion: 'Peace',
+        tags: ['Temple', 'Morning'],
+        story: '清晨的雍和宫，钟声悠扬。',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'demo-4',
+        latitude: baseLat + 0.015,
+        longitude: baseLng - 0.01,
+        emotion: 'Excitement',
+        tags: ['Subway', 'RushHour'],
+        story: '早高峰的地铁站，匆忙的脚步声。',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'demo-5',
+        latitude: baseLat - 0.012,
+        longitude: baseLng - 0.005,
+        emotion: 'Love',
+        tags: ['Park', 'Date'],
+        story: '北海公园的湖面上，划船的情侣。',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+        createdAt: new Date().toISOString()
+      }
+    ];
+
     try {
       const records = await api.getMapRecords();
-      setAudioRecords(records);
+      setAudioRecords([...demoRecords, ...records]);
     } catch (e) {
       console.error("Failed to fetch records", e);
+      // Fallback: Show demo records even if API fails
+      setAudioRecords(demoRecords);
     }
   };
 
@@ -75,6 +134,21 @@ export default function Home() {
     setSelectedAudio(null);
   };
 
+  // Handle navigation
+  const handleNavigate = (direction: 'next' | 'prev') => {
+    if (!selectedAudio) return;
+    const currentIndex = audioRecords.findIndex(r => r.id === selectedAudio.id);
+    if (currentIndex === -1) return;
+
+    let newIndex;
+    if (direction === 'next') {
+      newIndex = (currentIndex + 1) % audioRecords.length;
+    } else {
+      newIndex = (currentIndex - 1 + audioRecords.length) % audioRecords.length;
+    }
+    setSelectedAudio(audioRecords[newIndex]);
+  };
+
   return (
     <main className="w-full h-screen overflow-hidden bg-black text-white relative">
        {/* 背景地图 */}
@@ -100,6 +174,8 @@ export default function Home() {
          <AudioDetailOverlay
            record={selectedAudio}
            onClose={handleCloseAudioDetail}
+           onNext={() => handleNavigate('next')}
+           onPrev={() => handleNavigate('prev')}
          />
        )}
     </main>

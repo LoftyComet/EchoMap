@@ -119,7 +119,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={isRecording ? stopRecording : startRecording}
-            className={`relative flex items-center justify-center w-16 h-16 rounded-full transition-colors duration-300 ${isRecording ? 'bg-red-500' : 'bg-white text-black'}`}
+            className={`relative flex items-center justify-center w-16 h-16 rounded-full transition-all duration-300 ${isRecording ? 'bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.6)]' : 'glass-panel text-white hover:bg-white/10 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]'}`}
           >
             {/* 录音时的声波光晕特效 */}
             {isRecording && (

@@ -4,35 +4,83 @@
 
 :root {
   --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 0, 0, 0;
+  --background-start-rgb: 5, 5, 10;
   --background-end-rgb: 0, 0, 0;
+  --neon-blue: #00f3ff;
+  --neon-purple: #bc13fe;
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(10, 10, 20, 0.6);
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: radial-gradient(
+    circle at center,
+    rgb(var(--background-start-rgb)),
+    rgb(var(--background-end-rgb))
+  );
+  overflow: hidden; /* Prevent scroll on main map view */
 }
 
 /* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.neon-text {
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* Leaflet Map Customization */
+.map-tiles-dark {
+  filter: invert(1) grayscale(1) contrast(1.2) brightness(0.8);
+  opacity: 0.6;
+}
+
+.custom-leaflet-marker {
+  background: transparent;
+  border: none;
+}
+
+.custom-leaflet-marker:hover .animate-\[pulse-glow_3s_infinite\] {
+  animation-duration: 1s;
+  opacity: 0.8;
 }
