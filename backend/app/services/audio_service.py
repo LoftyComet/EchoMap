@@ -56,24 +56,37 @@ class AudioService:
     def get_city_resonance_records(self, db: Session, city: str, current_hour: int, limit: int = 20):
         """
         策略一：时空共鸣 (Time-Space Resonance)
-        逻辑：获取指定城市中，与当前时间段（前后2小时）氛围相符的声音。
+        逻辑：获取指定城市（或关键词）中，与当前时间段（前后2小时）氛围相符的声音。
         处理了跨午夜的时间计算（例如 23:00 的范围是 21:00 - 01:00）。
         """
-        min_hour = current_hour - 2
-        max_hour = current_hour + 2
+        # 1. 模糊匹配城市或标签 (修复：支持模糊搜索和标签搜索)
+        search_filter = or_(
+            AudioRecord.city.ilike(f"%{city}%"),
+            cast(AudioRecord.scene_tags, String).ilike(f"%{city}%"),
+            AudioRecord.transcript.ilike(f"%{city}%")
+        )
+
+        # 2. 时间过滤
+        # 修复：数据库存的是 UTC，前端传的是本地时间（假设 UTC+8）。
+        # 我们需要将本地时间转换为 UTC 时间进行查询。
+        # 例如：下午 14:00 (UTC+8) -> 06:00 (UTC)
+        target_utc_hour = (current_hour - 8) % 24
+        
+        min_hour = target_utc_hour - 2
+        max_hour = target_utc_hour + 2
         
         time_filter = None
         
         # 处理跨天逻辑
         if min_hour < 0:
-            # 例如 current=1 (01:00), min=-1 (23:00), max=3 (03:00)
+            # 例如 target=1 (01:00), min=-1 (23:00), max=3 (03:00)
             # 范围应为: [23, 24) OR [0, 3]
             time_filter = or_(
                 extract('hour', AudioRecord.created_at) >= (24 + min_hour),
                 extract('hour', AudioRecord.created_at) <= max_hour
             )
         elif max_hour >= 24:
-            # 例如 current=23 (23:00), min=21, max=25 (01:00)
+            # 例如 target=23 (23:00), min=21, max=25 (01:00)
             # 范围应为: [21, 24) OR [0, 1]
             time_filter = or_(
                 extract('hour', AudioRecord.created_at) >= min_hour,
@@ -84,7 +97,7 @@ class AudioService:
             time_filter = extract('hour', AudioRecord.created_at).between(min_hour, max_hour)
         
         return db.query(AudioRecord).filter(
-            AudioRecord.city == city,
+            search_filter,
             time_filter
         ).order_by(
             AudioRecord.like_count.desc()
@@ -96,6 +109,13 @@ class AudioService:
         逻辑：优先展示具有强烈文化属性的声音。
         通过 SQL Case When 动态计算权重，不依赖外部搜索引擎。
         """
+        # 1. 模糊匹配城市或标签 (修复：支持模糊搜索和标签搜索)
+        search_filter = or_(
+            AudioRecord.city.ilike(f"%{city}%"),
+            cast(AudioRecord.scene_tags, String).ilike(f"%{city}%"),
+            AudioRecord.transcript.ilike(f"%{city}%")
+        )
+
         # 定义文化关键词
         cultural_keywords = ['方言', '叫卖', '钟声', '戏曲', '集市', '夜市', '地铁报站', '寺庙', '老街', '茶馆']
         
@@ -110,7 +130,7 @@ class AudioService:
         )
         
         return db.query(AudioRecord).filter(
-            AudioRecord.city == city
+            search_filter
         ).order_by(
             desc(score_expression),      # 优先级1：文化属性分
             desc(AudioRecord.like_count) # 优先级2：热度
@@ -126,12 +146,19 @@ class AudioService:
         4. 如果距离 <= 100km，判定为“本地/探索模式”，优先推荐地标、景点类声音。
         """
         
+        # 1. 模糊匹配城市或标签 (修复：支持模糊搜索和标签搜索)
+        search_filter = or_(
+            AudioRecord.city.ilike(f"%{city}%"),
+            cast(AudioRecord.scene_tags, String).ilike(f"%{city}%"),
+            AudioRecord.transcript.ilike(f"%{city}%")
+        )
+
         # 1. 计算目标城市的几何中心 (无需外部 API，直接利用现有数据)
         # ST_Centroid 计算几何中心，ST_Collect 将所有点聚合
         city_center_query = db.query(
             func.ST_X(func.ST_Centroid(func.ST_Collect(AudioRecord.location_geo))),
             func.ST_Y(func.ST_Centroid(func.ST_Collect(AudioRecord.location_geo)))
-        ).filter(AudioRecord.city == city).first()
+        ).filter(search_filter).first()
         
         is_roaming = False
         
@@ -165,7 +192,7 @@ class AudioService:
         )
         
         return db.query(AudioRecord).filter(
-            AudioRecord.city == city
+            search_filter
         ).order_by(
             desc(score_expression),
             desc(AudioRecord.like_count)
