@@ -26,7 +26,7 @@
 | :--- | :--- | :--- | :--- |
 | ✅ | **音频文件上传** | 接收 `multipart/form-data` (文件+经纬度)。 | `POST /api/v1/records/upload` 已实现。 |
 | ✅ | **文件存储** | 将音频文件保存到服务器本地磁盘。 | 存储于 `backend/static/uploads`，提供静态资源访问。 |
-| ✅ | **音频元数据提取** | 自动获取音频时长、格式、采样率。 | 数据库 `duration` 字段目前存为 0，需引入 `ffmpeg` 处理。 |
+| ⚠️ | **音频元数据提取** | 自动获取音频时长、格式、采样率。 | 数据库 `duration` 字段目前存为 0，尚未引入 `ffmpeg` 或 `mutagen` 进行提取。 |
 
 ## 3. AI 大脑处理流水线 (AI Processing Pipeline)
 *核心差异化功能，用户上传后后台异步处理的过程。*
@@ -36,7 +36,7 @@
 | ✅ | **异步任务调度** | 上传接口立即返回，后台开启线程处理 AI 任务。 | 使用 `FastAPI.BackgroundTasks` 实现。 |
 | ✅ | **外部音频分析** | 调用 GPUHub API 获取转录 (Transcript) 和基础情感。 | `AIService` 已集成外部 API。 |
 | ✅ | **叙事与标签生成** | 调用 LLM (DeepSeek) 生成“声音故事”和“场景标签”。 | `AIService` 已集成 LLM Prompt 逻辑。 |
-| ⚠️ | **向量化 (Embedding)** | 将音频/文本转化为向量，用于后续匹配。 | **目前为 Mock 数据** (`[0.1] * 768`)，需接入真实 Embedding 模型。 |
+| ✅ | **向量化 (Embedding)** | 将音频/文本转化为向量，用于后续匹配。 | `AudioService` 已集成 SiliconFlow API 获取真实 Embedding。 |
 
 ## 4. 地图探索与发现 (Map Exploration)
 *用户在地图上浏览声音锚点。*
