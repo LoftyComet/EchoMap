@@ -7,6 +7,8 @@ class AudioRecordBase(BaseModel):
     latitude: float
     longitude: float
     duration: Optional[float] = None
+    file_size: Optional[int] = None
+    format: Optional[str] = None
     emotion_tag: Optional[str] = None
     scene_tags: Optional[List[str]] = None
     transcript: Optional[str] = None

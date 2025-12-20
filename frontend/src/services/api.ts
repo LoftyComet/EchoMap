@@ -15,6 +15,9 @@ const mapRecord = (record: any): AudioRecord => {
     story: record.generated_story || "No story generated yet.",
     audioUrl: `${API_BASE_URL}/static/uploads/${filename}`,
     createdAt: record.created_at,
+    duration: record.duration,
+    fileSize: record.file_size,
+    format: record.format,
   };
 };
 

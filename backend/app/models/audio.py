@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Text, JSON
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Text, JSON, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
@@ -14,6 +14,8 @@ class AudioRecord(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True) # 允许匿名上传，或者后续关联
     
     file_path = Column(String, nullable=False)
+    file_size = Column(Integer, nullable=True)
+    format = Column(String, nullable=True)
     duration = Column(Float, nullable=True)
     
     # 地理位置信息

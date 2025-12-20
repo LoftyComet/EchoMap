@@ -1,6 +1,7 @@
 import os
 import shutil
 import uuid
+import mutagen
 from fastapi import UploadFile, BackgroundTasks
 from sqlalchemy.orm import Session
 from backend.app import schemas, crud
@@ -72,11 +73,25 @@ class AudioService:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
+        # Extract metadata
+        try:
+            audio_meta = mutagen.File(file_path)
+            duration = audio_meta.info.length if audio_meta and audio_meta.info else 0
+            file_size = os.path.getsize(file_path)
+            file_format = file_ext.lstrip('.').lower()
+        except Exception as e:
+            print(f"Error extracting metadata: {e}")
+            duration = 0
+            file_size = 0
+            file_format = "unknown"
+            
         # 2. Create DB Record (Initial state)
         record_create = schemas.AudioRecordCreate(
             latitude=latitude,
             longitude=longitude,
-            duration=0,
+            duration=duration,
+            file_size=file_size,
+            format=file_format,
             emotion_tag="Processing...",
             scene_tags=[],
             transcript="",

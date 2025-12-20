@@ -22,10 +22,22 @@ export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose, onN
     setIsPlaying(false);
     setPlaybackTime(0);
     
+    // Set duration from record if available, else default to 30
+    if (record.duration) {
+        setDuration(record.duration);
+    } else {
+        setDuration(30);
+    }
+    
     // Create audio element for demo
     if (record.audioUrl) {
       audioRef.current = new Audio(record.audioUrl);
       // In a real app, you'd handle loading, duration, etc.
+      audioRef.current.onloadedmetadata = () => {
+          if (!record.duration) {
+             setDuration(audioRef.current?.duration || 30);
+          }
+      };
     }
 
     return () => {
@@ -112,6 +124,14 @@ export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose, onN
         <p className="text-sm text-gray-300 leading-relaxed font-light mb-6">
           {record.story}
         </p>
+
+        {/* Metadata Info */}
+        {(record.fileSize || record.format) && (
+          <div className="flex gap-4 mb-4 text-xs text-gray-500">
+             {record.format && <span>Format: {record.format.toUpperCase()}</span>}
+             {record.fileSize && <span>Size: {(record.fileSize / 1024 / 1024).toFixed(2)} MB</span>}
+          </div>
+        )}
 
         {/* Audio Player */}
         <div className="bg-white/5 rounded-xl mb-6 p-4 border border-white/5">

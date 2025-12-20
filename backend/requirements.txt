@@ -11,3 +11,4 @@ pgvector
 alembic
 pydantic-settings
 httpx
+mutagen

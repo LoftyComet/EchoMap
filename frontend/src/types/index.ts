@@ -7,6 +7,9 @@ export interface AudioRecord {
   story: string; // AI Generated Story
   audioUrl: string;
   createdAt: string;
+  duration?: number;
+  fileSize?: number;
+  format?: string;
 }
 
 export interface MapViewState {

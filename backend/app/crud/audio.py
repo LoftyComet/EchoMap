@@ -19,6 +19,8 @@ def create_audio_record(db: Session, record: AudioRecordCreate, file_path: str, 
         longitude=record.longitude,
         location_geo=point_wkt, # GeoAlchemy2 会自动处理 WKT 字符串
         duration=record.duration,
+        file_size=record.file_size,
+        format=record.format,
         emotion_tag=record.emotion_tag,
         scene_tags=record.scene_tags,
         transcript=record.transcript,
