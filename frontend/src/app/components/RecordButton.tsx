@@ -8,9 +8,10 @@ import { api } from '@/services/api';
 interface RecordButtonProps {
   userId?: string;
   onUploadSuccess?: () => void;
+  isMobile?: boolean;
 }
 
-export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSuccess }) => {
+export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSuccess, isMobile }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [volume, setVolume] = useState(0); // 用于控制波纹大小
@@ -191,7 +192,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
   const glowSize = Math.max(1, 1 + volume / 50); 
 
   return (
-    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[1000]">
+    <div className={`absolute left-1/2 -translate-x-1/2 z-[1000] transition-all duration-500 ${isMobile ? 'bottom-[200px]' : 'bottom-10'}`}>
       <AnimatePresence mode='wait'>
         {isUploading ? (
           <motion.div 
