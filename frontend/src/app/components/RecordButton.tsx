@@ -4,8 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Square, Loader2, Play, Pause, Check, X, RotateCcw } from 'lucide-react';
 import { api } from '@/services/api';
-import { ConfirmationModal } from './ConfirmationModal';
-import { AudioRecord } from '@/types';
 
 interface RecordButtonProps {
   userId?: string;
@@ -23,7 +21,6 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [uploadedRecord, setUploadedRecord] = useState<AudioRecord | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -180,8 +177,8 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
   const performUpload = async (blob: Blob, lat: number, lng: number) => {
     setIsUploading(true);
     try {
-      const record = await api.uploadRecord(blob, lat, lng, userId);
-      setUploadedRecord(record);
+      await api.uploadRecord(blob, lat, lng, userId);
+      if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
       console.error("Upload failed", error);
       alert("Upload failed");
@@ -190,30 +187,11 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
     }
   };
 
-  const handleModalConfirm = () => {
-    setUploadedRecord(null);
-    handleDiscard();
-    if (onUploadSuccess) onUploadSuccess();
-  };
-
-  const handleModalCancel = () => {
-    setUploadedRecord(null);
-    // Keep recordedBlob so user can decide what to do
-  };
-
   // 动态计算光晕大小
   const glowSize = Math.max(1, 1 + volume / 50); 
 
   return (
-    <>
-      {uploadedRecord && (
-        <ConfirmationModal 
-          record={uploadedRecord}
-          onConfirm={handleModalConfirm}
-          onCancel={handleModalCancel}
-        />
-      )}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[1000]">
+    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[1000]">
       <AnimatePresence mode='wait'>
         {isUploading ? (
           <motion.div 
