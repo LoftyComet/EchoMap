@@ -4,6 +4,7 @@ import uuid
 import mutagen
 import requests
 import json
+import subprocess
 from fastapi import UploadFile, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract, case, desc, or_, cast, String, and_
@@ -15,7 +16,9 @@ from app.core.database import SessionLocal
 
 class AudioService:
     def __init__(self):
-        self.upload_dir = "static/uploads"
+        # Use absolute path for upload directory
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.upload_dir = os.path.join(BASE_DIR, "static", "uploads")
         os.makedirs(self.upload_dir, exist_ok=True)
         
         # --- 向量检索配置 ---
@@ -23,6 +26,49 @@ class AudioService:
         self.embedding_api_key = os.getenv("EMBEDDING_API_KEY", "sk-irmlnxewkglpbsrdunduprnptlesoersihmxptwszornttyw")
         self.embedding_model_name = os.getenv("EMBEDDING_MODEL_NAME", "netease-youdao/bce-embedding-base_v1") 
         self.embedding_dim = int(os.getenv("EMBEDDING_DIM", "768"))
+
+    def _get_audio_metadata(self, file_path: str):
+        """使用 ffprobe 提取音频元数据"""
+        try:
+            # 检查 ffprobe 是否可用
+            try:
+                subprocess.run(["ffprobe", "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                print("ffprobe not found, falling back to basic file info")
+                return 0.0, "unknown"
+
+            cmd = [
+                "ffprobe",
+                "-v", "quiet",
+                "-print_format", "json",
+                "-show_format",
+                "-show_streams",
+                file_path
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"ffprobe error: {result.stderr}")
+                return 0.0, "unknown"
+            
+            data = json.loads(result.stdout)
+            
+            # 尝试从 format 中获取 duration
+            duration = 0.0
+            if "format" in data and "duration" in data["format"]:
+                try:
+                    duration = float(data["format"]["duration"])
+                except ValueError:
+                    pass
+            
+            # 格式
+            file_format = "unknown"
+            if "format" in data and "format_name" in data["format"]:
+                file_format = data["format"]["format_name"]
+                
+            return duration, file_format
+        except Exception as e:
+            print(f"Error extracting metadata with ffprobe: {e}")
+            return 0.0, "unknown"
 
     def _get_embedding(self, text: str):
         """调用外部 API 获取文本的 Embedding 向量"""
@@ -96,6 +142,38 @@ class AudioService:
             )
             filters.append(kw_filter)
         return and_(*filters)
+
+    async def regenerate_record(self, db: Session, record_id: str):
+        record = crud.audio.get_record(db, record_id)
+        if not record:
+            return None
+        
+        # Use existing transcript and emotion to regenerate story and tags
+        transcript = record.transcript or ""
+        emotion = record.emotion_tag or ""
+
+        new_content = await ai_service.regenerate_content(transcript, emotion)
+        
+        update_data = {
+            "scene_tags": new_content.get("scene_tags"),
+            "generated_story": new_content.get("story")
+        }
+        
+        # Re-calculate embedding
+        text_parts = [
+            f"城市: {record.city or ''}",
+            f"标签: {', '.join(new_content.get('scene_tags', []))}",
+            f"情感: {emotion}",
+            f"内容: {new_content.get('story') or transcript or ''}"
+        ]
+        text_to_embed = " ".join(text_parts)
+        
+        if text_to_embed and self.embedding_api_key:
+            embedding_vector = self._get_embedding(text_to_embed)
+            if embedding_vector:
+                update_data["embedding"] = embedding_vector
+
+        return crud.audio.update_audio_record(db, record_id, update_data)
 
     async def process_audio_background(self, record_id: str, file_path: str):
         """后台任务：AI 分析 + 生成 Embedding + 更新数据库"""
@@ -301,16 +379,19 @@ class AudioService:
         file_path = os.path.join(self.upload_dir, unique_filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        try:
-            audio_meta = mutagen.File(file_path)
-            duration = audio_meta.info.length if audio_meta and audio_meta.info else 0
-            file_size = os.path.getsize(file_path)
-            file_format = file_ext.lstrip('.').lower()
-        except Exception as e:
-            print(f"Error extracting metadata: {e}")
-            duration = 0
-            file_size = 0
-            file_format = "unknown"
+        
+        # 使用 ffprobe 提取元数据
+        duration, file_format = self._get_audio_metadata(file_path)
+        file_size = os.path.getsize(file_path)
+        
+        # 如果 ffprobe 返回的 format 包含多个（如 "matroska,webm"），取第一个
+        if "," in file_format:
+            file_format = file_format.split(",")[0]
+            
+        # 如果 ffprobe 失败，尝试使用文件扩展名作为格式
+        if file_format == "unknown":
+             file_format = file_ext.lstrip('.').lower()
+
         record_create = schemas.AudioRecordCreate(
             latitude=latitude,
             longitude=longitude,
